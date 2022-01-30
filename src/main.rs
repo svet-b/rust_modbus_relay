@@ -1,6 +1,7 @@
 use std::{env, thread, time};
 
-const DFLT_TTY_PATH: &str = "/dev/ttyAMA0";
+const DFLT_TTY_PATH: &str = "/dev/rs485";
+const TTY_PATH_ENV: &str = "TTY_PATH";
 const DFLT_BAUD: u32 = 9600;
 const DFLT_SLAVE_ID: u8 = 255;
 const DFLT_RELAY_NUM: u8 = 0;
@@ -44,7 +45,7 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use tokio_modbus::slave::Slave;
     use tokio_serial::SerialStream;
 
-    let tty_path = DFLT_TTY_PATH;
+    let tty_path = env::var(TTY_PATH_ENV).unwrap_or(DFLT_TTY_PATH.to_string());
     let slave = Slave(DFLT_SLAVE_ID);
     let baud_rate = DFLT_BAUD;
 
