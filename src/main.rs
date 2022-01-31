@@ -26,6 +26,36 @@ async fn get_state(
     Ok(rsp[relay_num as usize])
 }
 
+async fn do_loop(
+    ctx: &mut tokio_modbus::client::Context,
+    relay_num: u8,
+    duration: u16,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!("Reading relay state");
+    let state = get_state(ctx, relay_num).await?;
+    println!("Relay state is: {state}");
+
+    println!("Setting relay {relay_num} to ON");
+    set_state(ctx, relay_num, true).await?;
+
+    println!("Reading relay {relay_num} state");
+    let state = get_state(ctx, relay_num).await?;
+    println!("Relay state is: {state}");
+
+    println!("Waiting for {duration} seconds");
+    let sleep_time = time::Duration::from_secs(duration.into());
+    thread::sleep(sleep_time);
+
+    println!("Setting relay {relay_num} to OFF");
+    set_state(ctx, relay_num, false).await?;
+
+    println!("Reading relay {relay_num} state");
+    let state = get_state(ctx, relay_num).await?;
+    println!("Relay state is: {state}");
+
+    Ok(())
+}
+
 #[tokio::main(flavor = "current_thread")]
 pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Process arguments
@@ -53,27 +83,7 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let port = SerialStream::open(&builder).unwrap();
     let mut ctx = rtu::connect_slave(port, slave).await?;
 
-    println!("Reading relay state");
-    let state = get_state(&mut ctx, relay_num).await?;
-    println!("Relay state is: {state}");
-
-    println!("Setting relay {relay_num} to ON");
-    set_state(&mut ctx, relay_num, true).await?;
-
-    println!("Reading relay {relay_num} state");
-    let state = get_state(&mut ctx, relay_num).await?;
-    println!("Relay state is: {state}");
-
-    println!("Waiting for {duration} seconds");
-    let sleep_time = time::Duration::from_secs(duration.into());
-    thread::sleep(sleep_time);
-
-    println!("Setting relay {relay_num} to OFF");
-    set_state(&mut ctx, relay_num, false).await?;
-
-    println!("Reading relay {relay_num} state");
-    let state = get_state(&mut ctx, relay_num).await?;
-    println!("Relay state is: {state}");
+    do_loop(&mut ctx, relay_num, duration).await?;
 
     Ok(())
 }
